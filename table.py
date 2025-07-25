@@ -24,7 +24,7 @@ characteristics = {
     'FM': 'Metal', 'MD': 'Metal', 'NO': 'Metal', 'Lr': 'Metal' ,'LCP' : 'Ion' , "2HP": "Ion"
 }
 
-# Load the input data
+# Load the input data to extract this information
 input_file = '/home/parnia/parnia/F/result.csv'
 data = pd.read_csv(input_file)
 
@@ -36,10 +36,10 @@ if 'distance (å)' not in data.columns:
     print(f"Available columns: {data.columns}")
     raise KeyError("Column 'Distance (Å)' (case-insensitive) not found in the input file.")
 
-# Filter interactions within the 4 Å shell
+# Filter interactions within the 4 Å that can be changed based on ion 
 filtered_data = data[data['distance (å)'] <= 4.0]
 
-# Add a column for residue-specific counts within the 4 Å shell
+# Add a column for residue-specific counts within the 4 Å 
 filtered_data['residue specific count'] = filtered_data.groupby('residue name')['residue name'].transform('count')
 
 # === NEW: Create unique residue ID for identifying unique residues ===
@@ -64,7 +64,7 @@ interaction_counts = filtered_data['interaction type'].value_counts()
 residue_counts = filtered_data['residue name'].value_counts()
 atom_counts = filtered_data['residue atom name'].value_counts()
 
-# Total number of interactions in the 4 Å shell
+# Total number of interactions in the 4 Å 
 total_interactions_in_shell = filtered_data.shape[0]
 
 # Create a list to hold the results
