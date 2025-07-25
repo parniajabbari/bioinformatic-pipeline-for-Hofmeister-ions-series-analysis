@@ -19,8 +19,8 @@ def classify_F_interaction(dist, interaction_type):
     return interaction_type
 
 def main():
-    cif_dir = "/home/parnia/parnia/Ca/cif"  # Path remains the same
-    output_csv_path = "/home/parnia/parnia/Ca/result.csv"
+    cif_dir = "/home/parnia/parnia/F/cif"  # Path 
+    output_csv_path = "/home/parnia/parnia/F/result.csv"
 
     cif_files = [os.path.join(cif_dir, f) for f in os.listdir(cif_dir) if f.endswith('.cif')]
 
