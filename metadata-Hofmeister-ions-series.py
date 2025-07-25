@@ -1,3 +1,4 @@
+#In the script,  F( Fluoride) is interested ion, which can be replaced with other ions, then extract information regarding the ion, and then download the CIF files.
 import os
 import requests
 import pandas as pd
