@@ -5,7 +5,7 @@ from Bio import PDB
 import os
 import numpy as np
 
-# --- Define File Paths ---
+
 cif_directory = "/home/parnia/parnia/F/cif"  # Directory containing CIF files
 F_count_file = "/home/parnia/parnia/F/F_ion_information_filtered.csv"  # CSV with F counts
 
