@@ -1,3 +1,5 @@
+#The script analyzes fluorine (F) atom interactions in `.cif` protein structures by computing distances, angles, and classifying interaction types (e.g., ion, H-bond, metal), then outputs the results to a CSV file.
+
 import os
 from Bio.PDB import MMCIFParser
 import numpy as np
