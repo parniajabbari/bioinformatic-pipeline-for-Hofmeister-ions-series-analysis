@@ -52,7 +52,7 @@ Run: python pichart-dssp.py
   
 8■■ Analyze Hydration Shell
 Run: python water.py
-- Counts nearby water molecules (≤4 Å) around each ion. - Produces histogram of hydration shell sizes.
+- Counts nearby water molecules (≤4 or 5 Å) around each ion. - Produces histogram of hydration shell sizes.
 
 
 
