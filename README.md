@@ -9,8 +9,9 @@ Workflow for Metadata Extraction and Structural Analysis
 To systematically analyze protein-ion interactions involving Hofmeister series ions, we developed and executed an automated workflow within a High-Performance Computing (HPC) environment, using Bash scripting as well as Python programming.
 
 
-Ion–Protein Interaction Analysis Pipeline This pipeline helps you study how ions (default: F■) interact with proteins using PDB CIF files. You can
+This pipeline helps you study how ions (default: F■) interact with proteins using PDB CIF files. You can
 replace F with other ions (Cl, Br, I, etc.) easily.
+
 ■ Requirements
 Before starting, make sure you have installed: - Python 3.8+ - Packages: pip install biopython pandas
 matplotlib requests numpy - External tools: mkdssp (for secondary structure analysis)
