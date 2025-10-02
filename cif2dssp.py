@@ -1,3 +1,5 @@
+#after downloading the cif or Pdb can convert them to dssp 
+
 import os
 import subprocess
 
