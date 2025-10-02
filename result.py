@@ -5,6 +5,9 @@ from Bio.PDB import MMCIFParser
 import numpy as np
 import csv
 
+# >>> Change this once to switch the ion symbol globally <<<
+ION_SYMBOL = "F"
+
 def calculate_distance(coord1, coord2):
     return np.linalg.norm(np.array(coord1) - np.array(coord2))
 
@@ -15,24 +18,24 @@ def calculate_angle(a, b, c):
     angle = np.degrees(np.arccos(cos_angle))
     return angle
 
-def classify_F_interaction(dist, interaction_type):
+def classify_ion_interaction(dist, interaction_type):
     if dist < 4 and interaction_type == "N/A":
         return "Cofactor/ligand"
     return interaction_type
 
 def main():
-    cif_dir = "/home/parnia/parnia/F/cif"  # Path 
-    output_csv_path = "/home/parnia/parnia/F/result.csv"
+    cif_dir = "/Users/respina/desktop/cif"  # Path 
+    output_csv_path = "/Users/respina/desktop/result.csv"
 
     cif_files = [os.path.join(cif_dir, f) for f in os.listdir(cif_dir) if f.endswith('.cif')]
 
     with open(output_csv_path, mode='w', newline='') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow([
-            "PDB ID", "F Full Name", "F Atom Name", "Residue Atom Name",
+            "PDB ID", f"{ION_SYMBOL} Full Name", f"{ION_SYMBOL} Atom Name", "Residue Atom Name",
             "Residue Name", "Residue ID", "Distance (\u00c5)",
             "Angle (\u00b0)", "Interaction Type",
-            "F Atom Coordinates", "Residue Atom Coordinates", "Chain ID"
+            f"{ION_SYMBOL} Atom Coordinates", "Residue Atom Coordinates", "Chain ID"
         ])
 
         for file_path in cif_files:
@@ -44,7 +47,7 @@ def main():
                 print(f"Error processing file {file_path}: {e}")
                 continue
 
-            F_atoms = []
+            ion_atoms = []
             other_atoms = []
 
             for model in structure:
@@ -52,8 +55,8 @@ def main():
                     chain_id = chain.id
                     for residue in chain:
                         for atom in residue:
-                            if atom.element == 'F':
-                                F_atoms.append({
+                            if atom.element == ION_SYMBOL:
+                                ion_atoms.append({
                                     'name': atom.get_name(),
                                     'coord': atom.coord,
                                     'chain': chain_id,
@@ -69,23 +72,23 @@ def main():
                                 })
 
             results = []
-            # F–F interaction check
-            for i, F1 in enumerate(F_atoms):
-                for F2 in F_atoms[i + 1:]:
-                    if F1['full_id'] != F2['full_id']:
-                        dist = calculate_distance(F1['coord'], F2['coord'])
+            # Ion–Ion interaction check
+            for i, I1 in enumerate(ion_atoms):
+                for I2 in ion_atoms[i + 1:]:
+                    if I1['full_id'] != I2['full_id']:
+                        dist = calculate_distance(I1['coord'], I2['coord'])
                         if dist < 4:
                             interaction_type = "Ion"
                             results.append([
-                                F1['full_id'], F1['name'], F2['name'], "F", "N/A",
+                                I1['full_id'], I1['name'], I2['name'], ION_SYMBOL, "N/A",
                                 f"{dist:.2f}", "N/A", interaction_type,
-                                str(F1['coord'].tolist()), str(F2['coord'].tolist()), F1['chain']
+                                str(I1['coord'].tolist()), str(I2['coord'].tolist()), I1['chain']
                             ])
 
-            # F interactions with non-F atoms
-            for F in F_atoms:
+            # Ion interactions with non-ion atoms
+            for I in ion_atoms:
                 for other in other_atoms:
-                    dist = calculate_distance(F['coord'], other['coord'])
+                    dist = calculate_distance(I['coord'], other['coord'])
                     interaction_type = "N/A"
                     angle = None
 
@@ -93,7 +96,7 @@ def main():
                         continue
 
                     if other['resname'] == 'PEG':
-                        interaction_type = classify_F_interaction(dist, interaction_type)
+                        interaction_type = classify_ion_interaction(dist, interaction_type)
 
                     hofmeister_ions = {
                         'CA': 1.00, 'MG': 0.72, 'NA': 1.02, 'K': 1.38, 'SR': 1.24, 'BA': 1.43,
@@ -118,9 +121,9 @@ def main():
 
                     if interaction_type == "N/A":
                         ion_charge_dict = {
-                            'F': -1  # Fluoride ion is typically -1
+                            'F': -1, 'CL': -1, 'BR': -1, 'I': -1  # halides default negative
                         }
-                        ion_overall_charge = ion_charge_dict.get('F', None)
+                        ion_overall_charge = ion_charge_dict.get(ION_SYMBOL, None)
                         if ion_overall_charge is not None:
                             specific_neg_atoms = {'ASP': ['OD1', 'OD2'], 'GLU': ['OE1', 'OE2']}
                             specific_pos_atoms = {'ARG': ['NH1', 'NH2', 'NE'], 'LYS': ['NZ']}
@@ -144,7 +147,7 @@ def main():
                     if interaction_type == "N/A" and 2.2 <= dist <= 3.5:
                         for other2 in other_atoms:
                             if other['coord'].tolist() != other2['coord'].tolist() or other['name'] != other2['name']:
-                                angle = calculate_angle(F['coord'], other['coord'], other2['coord'])
+                                angle = calculate_angle(I['coord'], other['coord'], other2['coord'])
                                 if angle < 135:
                                     if other['resname'] == "HOH":
                                         interaction_type = "H-bond with Water"
@@ -154,10 +157,10 @@ def main():
                                         interaction_type = "H-bond with Side Chain"
 
                     results.append([
-                        F['full_id'], F['name'], other['name'],
+                        I['full_id'], I['name'], other['name'],
                         other['resname'], other['res_id'],
                         f"{dist:.2f}", angle if angle else "N/A",
-                        interaction_type, str(F['coord'].tolist()), str(other['coord'].tolist()), F['chain']
+                        interaction_type, str(I['coord'].tolist()), str(other['coord'].tolist()), I['chain']
                     ])
 
             for row in results:
@@ -165,7 +168,7 @@ def main():
             print(f"Processed {pdb_id} with {len(results)} interactions.")
 
     all_rows = []
-    unique_f_set = set()
+    unique_ion_set = set()
     with open(output_csv_path, mode='r') as csvfile:
         reader = csv.DictReader(csvfile)
         fieldnames = reader.fieldnames
@@ -173,22 +176,22 @@ def main():
             try:
                 distance = float(row["Distance (\u00c5)"])
                 if distance <= 5:
-                    unique_f_set.add(row["F Full Name"])
+                    unique_ion_set.add(row[f"{ION_SYMBOL} Full Name"])
             except ValueError:
                 pass
             all_rows.append(row)
 
-    new_fieldname = "Unique F in shell (≤ 4 Å)"
+    new_fieldname = f"Unique {ION_SYMBOL} in shell (≤ 4 Å)"
     updated_fieldnames = fieldnames + [new_fieldname]
 
     with open(output_csv_path, mode='w', newline='') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=updated_fieldnames)
         writer.writeheader()
         for row in all_rows:
-            row[new_fieldname] = len(unique_f_set)
+            row[new_fieldname] = len(unique_ion_set)
             writer.writerow(row)
 
-    print(f"Unique F in shell (≤ 4 Å): {len(unique_f_set)}")
+    print(f"Unique {ION_SYMBOL} in shell (≤ 4 Å): {len(unique_ion_set)}")
 
 if __name__ == "__main__":
     main()
