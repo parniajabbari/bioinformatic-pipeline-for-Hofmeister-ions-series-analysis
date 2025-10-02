@@ -95,8 +95,8 @@ for interaction in interaction_counts.index:
             'Interaction Type': interaction_type,
             'Residue Name': residue,
             'Approx. Percentage in Shell': approximate_percentage,
-            'res atoms in a interaction/ Total atoms in Shell': f"{count} / {total_interactions_in_shell}",
-            'res atoms in a interaction / all the res atoms in shell': f"{count} / {residue_specific_count}",
+            'atoms of the residue (column B) in  interaction type (column A) / Total atoms  of all residues in Shell': f"{count} / {total_interactions_in_shell}",
+            'atoms of the residue (column B) in  interaction type (column A) / total number of residue (column B) in the shell': f"{count} / {residue_specific_count}",
             'Characteristic': characteristic,
             'Atom-Specific Counts': atom_specific_counts,
             'Unique Residues in Shell': unique_residue_count  # ← NEW column added
@@ -108,8 +108,8 @@ results_df = pd.DataFrame(results)
 # Aggregate results for metals and cofactors (same residue name and interaction type)
 results_df_aggregated = results_df.groupby(['Interaction Type', 'Residue Name']).agg({
     'Approx. Percentage in Shell': 'first',
-    'res atoms in a interaction/ Total atoms in Shell': 'first',
-    'res atoms in a interaction / all the res atoms in shell': 'first',
+    'atoms of the residue (column B) in  interaction type (column A) / Total atoms  of all residues in Shell': 'first',
+    'atoms of the residue (column B) in  interaction type (column A) / total number of residue (column B) in the shell': 'first',
     'Characteristic': 'first',
     'Atom-Specific Counts': lambda x: {key: sum(d.get(key, 0) for d in x) for key in set(k for d in x for k in d)},
     'Unique Residues in Shell': 'first'  # ← also carry this into the final table
