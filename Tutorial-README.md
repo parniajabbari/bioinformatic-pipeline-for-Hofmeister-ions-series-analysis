@@ -16,43 +16,48 @@ replace F with other ions (Cl, Br, I, etc.) easily.
 Before starting, make sure you have installed: - Python 3.8+ - Packages: pip install biopython pandas
 matplotlib requests numpy - External tools: mkdssp (for secondary structure analysis)
 
-1■■ Extract Metadata & Download CIF Files
+1. Extract Metadata & Download CIF Files
 Run: python metadata-Hofmeister-ions-series.py
 - Searches PDB for entries with your ion of interest (ION_SYMBOL in script). - Filters for high-resolution protein X-ray structures (≤2.0 Å).
 - Downloads CIF files into /ION/cif.
 - Creates ION_ion_information_filtered.csv with metadata + ion counts.
   
-2■■ Analyze Ion Interactions
+2. Analyze Ion Interactions
 Run: python result.py
 - Reads CIFs, finds all ion–atom interactions (distance, angle).
 - Classifies interactions: Ion–Ion, Salt Bridge, Metal, H-bond, Aliphatic, Aromatic, Cofactor/Ligand, Water.
 - Saves detailed results into result.csv.
   
-3■■ Convert CIF → DSSP (Secondary Structure)
+3. Convert CIF → DSSP (Secondary Structure)
 Run: python cif2dssp.py
 - Uses mkdssp to convert CIF → DSSP. - Stores .dssp files in /dssp_results.
   
-4■■ Add Secondary Structure Info
+4. Add Secondary Structure Info
 Run: python DSSP.column.py
 - Merges DSSP secondary structure info with interaction data in result.csv. - Assigns each residue to: α-helix, β-strand, turn, coil, etc.
   
-5■■ Generate Interaction Tables
+5. Generate Interaction Tables
 Run: python table.py
 - Processes result.csv.
 - Summarizes residue types, interaction counts within interested shell, unique residue counts. - Output: interaction_statistics_with_residue_counts.csv.
-  
-6■■ Plot Interaction Type Distribution (Pie Chart)
+
+  ![WhatsApp Image 2024-11-04 at 16 29 35](https://github.com/user-attachments/assets/b13d407e-f580-4f84-ab1e-29f31cd82bab)
+
+6. Plot Interaction Type Distribution (Pie Chart)
 Run: python pichart-interaction-type.py
 - Creates pie chart of interaction types.
 - Saves as interaction_type_distribution.png.
   
-7■■ Plot Secondary Structure Distribution (Pie Chart)
+7. Plot Secondary Structure Distribution (Pie Chart)
 Run: python pichart-dssp.py
 - Visualizes secondary structure preference of ion interactions. - Saves as secondary_structure_distribution.png.
   
-8■■ Analyze Hydration Shell
+8. Analyze Hydration Shell
 Run: python water.py
 - Counts nearby water molecules (≤4 or 5 Å) around each ion. - Produces histogram of hydration shell sizes.
+
+9. PROPKA Calculation of pKa Values
+Addionally, after ion replacement, the script runs PROPKA to predict pKa values of ionizable residues in the modified protein structures.This provides insight into how different ions affect local protein charge and stability, a key factor in Hofmeister effects.Results are stored in a folder automatically named after the ion_symbol (propka-GAI), keeping outputs organized for multiple ions.
 
 
 
