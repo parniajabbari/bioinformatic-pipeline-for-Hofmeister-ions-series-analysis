@@ -4,7 +4,7 @@ import numpy as np
 import csv
 
 # >>> Change this once to switch the ion symbol globally <<<
-ION_SYMBOL = "GAI"  # Example: "F", "CL", "SCN", "SO4", etc.
+ION_SYMBOL = "F"  # Example: "F", "CL", "SCN", "SO4", etc.
 
 def calculate_distance(coord1, coord2):
     """Compute Euclidean distance between two 3D coordinates."""
@@ -27,7 +27,7 @@ def classify_ion_interaction(dist, interaction_type):
 
 def main():
     # 🔧 Set file paths
-    cif_dir = "/Users/respina/desktop/GAI/cif"  # Path to CIF directory
+    cif_dir = "/Users/respina/desktop/F/cif"  # Path to CIF directory
     output_csv_path = "/Users/respina/desktop/result.csv"
 
     # Get all CIF files in the directory
