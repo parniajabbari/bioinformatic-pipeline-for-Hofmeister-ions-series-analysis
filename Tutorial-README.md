@@ -57,14 +57,19 @@ Unique Residues in Shell – Number of unique residue instances of this type in 
 Run: python pichart-interaction-type.py
 - Creates pie chart of interaction types.
 - Saves as interaction_type_distribution.png.
-  
+
+- <img width="328" height="265" alt="image" src="https://github.com/user-attachments/assets/637805b7-8760-4462-adcc-ae47d668dcc5" />
+
 7. Plot Secondary Structure Distribution (Pie Chart)
 Run: python pichart-dssp.py
 - Visualizes secondary structure preference of ion interactions. - Saves as secondary_structure_distribution.png.
-  
+- <img width="327" height="263" alt="image" src="https://github.com/user-attachments/assets/bdfabb81-5a05-426a-8bde-0e6581c7eb02" />
+
 8. Analyze Hydration Shell
 Run: python water.py
 - Counts nearby water molecules (≤4 or 5 Å) around each ion. - Produces histogram of hydration shell sizes.
+
+- <img width="490" height="294" alt="image" src="https://github.com/user-attachments/assets/47fbf0f9-6157-4ddc-bbcc-c8d752cb0ae6" />
 
 9. PROPKA Calculation of pKa Values
 Addionally, after ion replacement, the script runs PROPKA to predict pKa values of ionizable residues in the modified protein structures.This provides insight into how different ions affect local protein charge and stability, a key factor in Hofmeister effects.Results are stored in a folder automatically named after the ion_symbol (propka-GAI), keeping outputs organized for multiple ions.
