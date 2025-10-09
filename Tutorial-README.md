@@ -41,6 +41,16 @@ Run: python table.py
 - Processes result.csv.
 - Summarizes residue types, interaction counts within interested shell, unique residue counts. - Output: interaction_statistics_with_residue_counts.csv.
 
+- the columns in your output CSV based on the following photo:
+Interaction Type – Type of interaction (H-bond, Salt Bridge, Metal, Ion, Cofactor/Ligand).
+Residue Name – Three-letter code of the interacting residue or ion.
+Approx. Percentage in Shell – % of all interactions in the 4 Å shell involving this residue.
+Atoms in Interaction / Total Atoms in Shell – Atom-level contribution of this residue relative to all atoms.
+Atoms in Interaction / Total Residue Atoms in Shell – Atom-level contribution relative to this residue type.
+Characteristic – Chemical/functional class of the residue (Hydrophobic, Polar, Metal, Ion, etc.).
+Atom-Specific Counts – Counts of each residue atom involved in interactions.
+Unique Residues in Shell – Number of unique residue instances of this type in the shell.
+
   ![WhatsApp Image 2024-11-04 at 16 29 35](https://github.com/user-attachments/assets/b13d407e-f580-4f84-ab1e-29f31cd82bab)
 
 6. Plot Interaction Type Distribution (Pie Chart)
