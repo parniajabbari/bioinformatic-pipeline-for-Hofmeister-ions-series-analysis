@@ -24,22 +24,7 @@ Run: python metadata-Hofmeister-ions-series.py
 
 - The information are: 
 
-pdb_id 
-experimental_method
-UniProt 
-title 
-Resolution
-organism_scientific_name
-interacting_ligands
-assembly_type 
-struct_asym_id 
-number_of_protein_chains 
-all_enzyme_names
- number_of_bound_molecules
-SUPFAM
-number of chains
-lON_count
-Sum ION
+pdb_id , experimental_method , UniProt , title , Resolution , organism_scientific_name , interacting_ligands , assembly_type  , struct_asym_id , number_of_protein_chains , all_enzyme_names , number_of_bound_molecules , SUPFAM , number of chains , lON_count , Sum ION
 
   
 2. Analyze Ion Interactions
