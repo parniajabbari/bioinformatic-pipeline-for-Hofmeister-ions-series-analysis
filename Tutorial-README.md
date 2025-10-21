@@ -21,6 +21,26 @@ Run: python metadata-Hofmeister-ions-series.py
 - Searches PDB for entries with your ion of interest (ION_SYMBOL in script). - Filters for high-resolution protein X-ray structures (≤2.0 Å).
 - Downloads CIF files into /ION/cif.
 - Creates ION_ion_information_filtered.csv with metadata + ion counts.
+
+- The information are: 
+
+pdb_id 
+experimental_method
+UniProt 
+title 
+Resolution
+organism_scientific_name
+interacting_ligands
+assembly_type 
+struct_asym_id 
+number_of_protein_chains 
+all_enzyme_names
+ number_of_bound_molecules
+SUPFAM
+number of chains
+lON_count
+Sum ION
+
   
 2. Analyze Ion Interactions
 Run: python result.py
