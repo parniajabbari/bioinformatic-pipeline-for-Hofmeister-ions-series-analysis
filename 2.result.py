@@ -4,7 +4,7 @@ import numpy as np
 import csv
 
 # >>> Change this once to switch the ion symbol globally <<<
-ION_SYMBOL = "F"  # Example: "F", "CL", "SCN", "SO4", etc.
+ION_SYMBOL = "GAI"  # Example: "F", "CL", "SCN", "SO4", etc.
 
 def calculate_distance(coord1, coord2):
     """Compute Euclidean distance between two 3D coordinates."""
@@ -17,7 +17,7 @@ def calculate_angle(a, b, c):
     cos_angle = np.dot(ab, bc) / (np.linalg.norm(ab) * np.linalg.norm(bc))
     cos_angle = np.clip(cos_angle, -1.0, 1.0)
     angle = np.degrees(np.arccos(cos_angle))
-    return angle
+    return angle 
 
 def classify_ion_interaction(dist, interaction_type):
     """Classify simple ligand/cofactor interactions."""
@@ -26,10 +26,9 @@ def classify_ion_interaction(dist, interaction_type):
     return interaction_type
 
 def main():
-    # 🔧 Set file paths
-    cif_dir = "/Users/respina/desktop/F/cif"  # Path to CIF directory
-    output_csv_path = "/Users/respina/desktop/result.csv"
-
+    cif_dir = f"/Users/respina/desktop/{ION_SYMBOL}/cif"  # Path to CIF directory
+    output_csv_path = f"/Users/respina/desktop/{ION_SYMBOL}/result.csv"
+    
     # Get all CIF files in the directory
     cif_files = [os.path.join(cif_dir, f) for f in os.listdir(cif_dir) if f.endswith('.cif')]
 
