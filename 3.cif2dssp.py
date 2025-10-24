@@ -3,11 +3,13 @@
 import os
 import subprocess
 
+
 # Directory containing .cif files
-input_dir = "/home/anto/parnia/F/cif"
+input_dir = "/Users/respina/desktop/GAI/cif"
 
 # Directory to store the output .dssp files
-output_dir = "/home/anto/parnia/F/dssp_results"
+output_dir = "/Users/respina/desktop/GAI/dssp_results"
+
 
 # Ensure the output directory exists
 os.makedirs(output_dir, exist_ok=True)
