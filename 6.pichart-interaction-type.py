@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import os
 
 # Define the path to the directory and the file name
-directory = "/home/parnia/parnia/F"
+directory = "/Users/respina/desktop/GAI"
 file_name = "interaction_statistics_with_residue_counts.csv"
 file_path = os.path.join(directory, file_name)
 
