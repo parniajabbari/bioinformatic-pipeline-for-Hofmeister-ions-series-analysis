@@ -3,18 +3,27 @@ import csv
 import requests
 import propka.run
 from datetime import datetime
-
-# 🧪 Ion Symbol Setup — change this once!
-ion_symbol = "GAI"  # Example: GAI, LCP, XYZ, etc.
+import argparse
 
 # -----------------------------------------------------------------------------
-# 0️⃣ Setup Logging
+# --- ARGUMENT PARSER ---
+# -----------------------------------------------------------------------------
+parser = argparse.ArgumentParser(description="Download PDBs, replace ions, run PROPKA, and extract pKa values.")
+parser.add_argument("ion", help="Ion symbol, e.g., GAI, LCP")
+parser.add_argument("--output", default=None, help="Output directory for all results (optional)")
+args = parser.parse_args()
+
+ION_SYMBOL = args.ion
+OUTPUT_DIR = args.output  # Can be None; we will define default later
+
+# -----------------------------------------------------------------------------
+# --- LOGGING ---
 # -----------------------------------------------------------------------------
 def setup_logging(base_dir):
     """Create a log file to record all activity."""
     log_dir = os.path.join(base_dir, "logs")
     os.makedirs(log_dir, exist_ok=True)
-    log_file = os.path.join(log_dir, f"{ion_symbol}_propka_log.txt")
+    log_file = os.path.join(log_dir, f"{ION_SYMBOL}_propka_log.txt")
     return log_file
 
 def log_message(message, log_file):
@@ -26,10 +35,9 @@ def log_message(message, log_file):
         f.write(line)
 
 # -----------------------------------------------------------------------------
-# 1️⃣ Fetch PDB file
+# --- PDB DOWNLOAD ---
 # -----------------------------------------------------------------------------
 def fetch_pdb(pdb_id, download_dir, log_file):
-    """Fetch the PDB file from the RCSB PDB repository."""
     url = f'https://files.rcsb.org/download/{pdb_id}.pdb'
     local_filename = os.path.join(download_dir, f'{pdb_id}.pdb')
     try:
@@ -44,10 +52,9 @@ def fetch_pdb(pdb_id, download_dir, log_file):
         return None
 
 # -----------------------------------------------------------------------------
-# 2️⃣ Safely replace ion names (preserve PDB column format)
+# --- REPLACE ION SYMBOLS ---
 # -----------------------------------------------------------------------------
 def replace_all_ions(pdb_filename, ion_symbol, log_file):
-    """Replace ion atom and residue names safely without breaking PDB formatting."""
     ion_symbols = ["CA", "MG", "ZN", "NA", "CL", "MN", "FE", "CU", "K", "CO", "NI"]
     try:
         lines = []
@@ -57,7 +64,6 @@ def replace_all_ions(pdb_filename, ion_symbol, log_file):
                     res_name = line[17:20].strip()
                     atom_name = line[12:16].strip()
                     if res_name in ion_symbols or atom_name in ion_symbols:
-                        # Replace both atom and residue name, keeping proper padding
                         new_line = (
                             line[:12]
                             + f"{ion_symbol:>4}"  # atom name
@@ -76,23 +82,18 @@ def replace_all_ions(pdb_filename, ion_symbol, log_file):
         log_message(f"❌ Error replacing ions in {pdb_filename}: {e}", log_file)
 
 # -----------------------------------------------------------------------------
-# 3️⃣ Run PROPKA
+# --- RUN PROPKA ---
 # -----------------------------------------------------------------------------
 def calculate_pka(pdb_filename, output_dir, log_file):
-    """Run PROPKA calculation and save results in the specified directory."""
     try:
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
-
+        os.makedirs(output_dir, exist_ok=True)
         pdb_base = os.path.splitext(os.path.basename(pdb_filename))[0]
         result_file = os.path.join(output_dir, f"{pdb_base}.pka")
 
-        # Skip if result already exists
         if os.path.exists(result_file):
             log_message(f"⏩ Skipping {pdb_base} (PROPKA already done)", log_file)
             return True
 
-        # Run PROPKA
         os.chdir(output_dir)
         propka.run.single(pdb_filename)
         log_message(f"🧮 pKa calculation completed for {pdb_filename}. Results saved in {output_dir}", log_file)
@@ -102,10 +103,9 @@ def calculate_pka(pdb_filename, output_dir, log_file):
         return False
 
 # -----------------------------------------------------------------------------
-# 4️⃣ Extract PROPKA results
+# --- EXTRACT PROPKA RESULTS ---
 # -----------------------------------------------------------------------------
 def extract_propka_results(pdb_filename, output_dir, log_file):
-    """Extract and return PROPKA results from the generated .pka file."""
     pdb_base = os.path.splitext(os.path.basename(pdb_filename))[0]
     propka_file = os.path.join(output_dir, f"{pdb_base}.pka")
 
@@ -135,19 +135,17 @@ def extract_propka_results(pdb_filename, output_dir, log_file):
         log_message(f"📊 Extracted {len(results)} pKa entries for {pdb_base}", log_file)
     else:
         log_message(f"⚠️ No titratable residues found in {pdb_base}", log_file)
-
     return results
 
 # -----------------------------------------------------------------------------
-# 5️⃣ Read CSV of PDB IDs
+# --- READ PDB IDS FROM CSV ---
 # -----------------------------------------------------------------------------
 def read_pdb_ids_from_csv(csv_file, log_file):
-    """Read PDB IDs from the first column of the provided CSV file."""
     pdb_ids = []
     try:
         with open(csv_file, 'r', newline='') as file:
             reader = csv.reader(file)
-            next(reader, None)  # Skip header if exists
+            next(reader, None)
             for row in reader:
                 if row and row[0].strip():
                     pdb_ids.append(row[0].strip().upper())
@@ -157,15 +155,12 @@ def read_pdb_ids_from_csv(csv_file, log_file):
     return pdb_ids
 
 # -----------------------------------------------------------------------------
-# 6️⃣ Main pipeline
+# --- MAIN PIPELINE ---
 # -----------------------------------------------------------------------------
-def process_pdb_ids(csv_file, download_dir):
-    """Process each PDB ID: download, modify ions, run PROPKA, extract results."""
-    base_dir = os.path.dirname(csv_file)
-    output_dir = os.path.join(base_dir, f"propka-{ion_symbol}")
+def process_pdb_ids(csv_file, download_dir, output_dir):
     os.makedirs(download_dir, exist_ok=True)
     os.makedirs(output_dir, exist_ok=True)
-    log_file = setup_logging(base_dir)
+    log_file = setup_logging(output_dir)
 
     all_results = []
     pdb_ids = read_pdb_ids_from_csv(csv_file, log_file)
@@ -176,14 +171,13 @@ def process_pdb_ids(csv_file, download_dir):
         if not pdb_filename:
             continue
 
-        replace_all_ions(pdb_filename, ion_symbol, log_file)
+        replace_all_ions(pdb_filename, ION_SYMBOL, log_file)
 
         success = calculate_pka(pdb_filename, output_dir, log_file)
         if success:
             results = extract_propka_results(pdb_filename, output_dir, log_file)
             all_results.extend(results)
 
-    # 🧾 Save all pKa results to a single CSV file
     summary_file = os.path.join(output_dir, "propka_summary.csv")
     if all_results:
         with open(summary_file, "w", newline='') as csvfile:
@@ -196,11 +190,15 @@ def process_pdb_ids(csv_file, download_dir):
         log_message("\n⚠️ No PROPKA results to save.", log_file)
 
 # -----------------------------------------------------------------------------
-# 🚀 Entry point
+# --- ENTRY POINT ---
 # -----------------------------------------------------------------------------
 if __name__ == "__main__":
-    base_dir = os.path.join("/Users/respina/desktop", ion_symbol)
-    csv_file = os.path.join(base_dir, f"{ion_symbol}_ion_information_filtered.csv")
-    download_dir = os.path.join(base_dir, "pdb_files")
+    # Default directories if --output is not provided
+    base_dir = os.path.join("/Users/respina/desktop", ION_SYMBOL)
+    if OUTPUT_DIR is None:
+        OUTPUT_DIR = base_dir
 
-    process_pdb_ids(csv_file, download_dir)
+    csv_file = os.path.join(base_dir, f"{ION_SYMBOL}_ion_information_filtered.csv")
+    download_dir = os.path.join(OUTPUT_DIR, "pdb_files")
+
+    process_pdb_ids(csv_file, download_dir, OUTPUT_DIR)
