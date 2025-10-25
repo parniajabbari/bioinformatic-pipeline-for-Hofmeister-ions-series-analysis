@@ -1,44 +1,76 @@
 import os
+import argparse
 from Bio.PDB import MMCIFParser
 import numpy as np
 import csv
 
-# >>> Change this once to switch the ion symbol globally <<<
-ION_SYMBOL = "GAI"  # Example: "F", "CL", "SCN", "SO4", etc.
+# -----------------------------
+# 1. Command-line arguments
+# -----------------------------
+parser = argparse.ArgumentParser(
+    description="Analyze Hofmeister ion interactions in CIF structures."
+)
+parser.add_argument(
+    "ion",
+    type=str,
+    help="Ion symbol (e.g., F, CL, SCN, SO4, etc.)"
+)
+parser.add_argument(
+    "--output",
+    type=str,
+    default=None,
+    help="Optional output directory (default: ~/Desktop/{ION}/)"
+)
 
+args = parser.parse_args()
+ION_SYMBOL = args.ion.upper()
+
+# -----------------------------
+# 2. Define directories
+# -----------------------------
+BASE_DESKTOP = os.path.expanduser("~/Desktop")
+OUTPUT_DIRECTORY = args.output or os.path.join(BASE_DESKTOP, ION_SYMBOL)
+CIF_DIRECTORY = os.path.join(OUTPUT_DIRECTORY, "cif")
+
+os.makedirs(CIF_DIRECTORY, exist_ok=True)
+
+# ⚠️ Always save to result.csv
+output_csv_path = os.path.join(OUTPUT_DIRECTORY, "result.csv")
+
+# -----------------------------
+# 3. Core analysis functions
+# -----------------------------
 def calculate_distance(coord1, coord2):
-    """Compute Euclidean distance between two 3D coordinates."""
     return np.linalg.norm(np.array(coord1) - np.array(coord2))
 
 def calculate_angle(a, b, c):
-    """Compute angle (in degrees) between three coordinates (a–b–c)."""
     ab = np.array(b) - np.array(a)
     bc = np.array(c) - np.array(b)
     cos_angle = np.dot(ab, bc) / (np.linalg.norm(ab) * np.linalg.norm(bc))
     cos_angle = np.clip(cos_angle, -1.0, 1.0)
-    angle = np.degrees(np.arccos(cos_angle))
-    return angle 
+    return np.degrees(np.arccos(cos_angle))
 
 def classify_ion_interaction(dist, interaction_type):
-    """Classify simple ligand/cofactor interactions."""
     if dist < 4 and interaction_type == "N/A":
         return "Cofactor/ligand"
     return interaction_type
 
+# -----------------------------
+# 4. Main analysis routine
+# -----------------------------
 def main():
-    cif_dir = f"/Users/respina/desktop/{ION_SYMBOL}/cif"  # Path to CIF directory
-    output_csv_path = f"/Users/respina/desktop/{ION_SYMBOL}/result.csv"
-    
-    # Get all CIF files in the directory
-    cif_files = [os.path.join(cif_dir, f) for f in os.listdir(cif_dir) if f.endswith('.cif')]
+    cif_files = [os.path.join(CIF_DIRECTORY, f) for f in os.listdir(CIF_DIRECTORY) if f.endswith('.cif')]
 
-    # Open CSV writer
+    if not cif_files:
+        print(f"⚠️ No CIF files found in {CIF_DIRECTORY}")
+        return
+
     with open(output_csv_path, mode='w', newline='') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow([
             "PDB ID", f"{ION_SYMBOL} Full Name", f"{ION_SYMBOL} Atom Name",
             "Residue Atom Name", "Residue Name", "Residue ID",
-            "Distance (\u00c5)", "Angle (\u00b0)", "Interaction Type",
+            "Distance (Å)", "Angle (°)", "Interaction Type",
             f"{ION_SYMBOL} Atom Coordinates", "Residue Atom Coordinates", "Chain ID"
         ])
 
@@ -46,7 +78,6 @@ def main():
             pdb_id = os.path.splitext(os.path.basename(file_path))[0]
             parser = MMCIFParser(QUIET=True)
 
-            # --- Load structure ---
             try:
                 structure = parser.get_structure(pdb_id, file_path)
             except Exception as e:
@@ -56,13 +87,11 @@ def main():
             ion_atoms = []
             other_atoms = []
 
-            # --- Extract atoms ---
             for model in structure:
                 for chain in model:
                     chain_id = chain.id
                     for residue in chain:
                         for atom in residue:
-                            # ✅ Detect ion by residue name or element
                             if (residue.resname.strip().upper() == ION_SYMBOL or
                                 atom.element.strip().upper() == ION_SYMBOL):
                                 ion_atoms.append({
@@ -110,7 +139,6 @@ def main():
                     if other['resname'] == 'PEG':
                         interaction_type = classify_ion_interaction(dist, interaction_type)
 
-                    # Hofmeister ions
                     hofmeister_ions = {
                         'CA': 1.00, 'MG': 0.72, 'NA': 1.02, 'K': 1.38, 'SR': 1.24, 'BA': 1.43,
                         'CL': 1.67, 'BR': 1.82, 'I': 2.06, 'SO4': 2.58, 'NO3': 1.90
@@ -119,14 +147,12 @@ def main():
                     if ion_radius > 0 and dist <= 4:
                         interaction_type = "Ion"
 
-                    # Metal coordination
                     if interaction_type == "N/A" and 3.5 <= dist <= 4:
                         metals = ['ZN', 'MG', 'FE', 'CA', 'CU', 'NI', 'MN', 'CO', 'NA', 'K', 'CD',
                                   'AL', 'AG', 'AU', 'PT', 'LI', 'SR', 'BA', 'RB']
                         if other['resname'].upper() in metals:
                             interaction_type = "Interaction with Metal"
 
-                    # Aliphatic / Aromatic
                     if interaction_type == "N/A" and 3.5 <= dist <= 4:
                         if other['resname'].upper() in ['ASN', 'LEU', 'ALA', 'CYS', 'GLN', 'GLY',
                                                         'ILE', 'MET', 'PRO', 'SER', 'THR', 'VAL', 'OH']:
@@ -136,17 +162,14 @@ def main():
                         if other['resname'].upper() in ['PHE', 'TYR', 'TRP']:
                             interaction_type = "Aromatic"
 
-                    # Salt bridges
                     if interaction_type == "N/A":
                         ion_charge_dict = {'F': -1, 'CL': -1, 'BR': -1, 'I': -1}
                         ion_overall_charge = ion_charge_dict.get(ION_SYMBOL, None)
                         if ion_overall_charge is not None:
                             specific_neg_atoms = {'ASP': ['OD1', 'OD2'], 'GLU': ['OE1', 'OE2']}
                             specific_pos_atoms = {'ARG': ['NH1', 'NH2', 'NE'], 'LYS': ['NZ']}
-
                             resname = other['resname'].upper()
                             atom_name = other['name'].upper()
-
                             if ion_overall_charge > 0:
                                 if resname in specific_neg_atoms and atom_name in specific_neg_atoms[resname]:
                                     if 2.2 <= dist <= 4.0:
@@ -160,7 +183,6 @@ def main():
                                 elif 3.5 <= dist <= 4.0:
                                     interaction_type = "Salt Bridge"
 
-                    # H-bond classification
                     if interaction_type == "N/A" and 2.2 <= dist <= 3.5:
                         for other2 in other_atoms:
                             if other['coord'].tolist() != other2['coord'].tolist() or other['name'] != other2['name']:
@@ -173,14 +195,12 @@ def main():
                                     else:
                                         interaction_type = "H-bond with Side Chain"
 
-                    # Record interaction
                     results.append([
                         I['full_id'], I['name'], other['name'], other['resname'], other['res_id'],
                         f"{dist:.2f}", angle if angle else "N/A",
                         interaction_type, str(I['coord'].tolist()), str(other['coord'].tolist()), I['chain']
                     ])
 
-            # --- Write to CSV ---
             for row in results:
                 writer.writerow([pdb_id] + row)
 
@@ -190,4 +210,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
