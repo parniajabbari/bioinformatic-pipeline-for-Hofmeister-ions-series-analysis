@@ -15,7 +15,7 @@ This pipeline helps you study how ions interact with proteins using PDB CIF file
 Before starting, make sure you have installed: - Python 3.8+ - Packages: pip install biopython pandas
 matplotlib requests numpy - External tools: mkdssp (for secondary structure analysis) and ProPka tool.
 
-■To run the pipeline for any ion, simply open your terminal (Bash/Linux) and provide the ion symbol as an argument.
+■ To run the pipeline for any ion, simply open your terminal (Bash/Linux) and provide the ion symbol as an argument.
 No need to edit the Python file — just change the ion symbol in the command.
 
 like: 
