@@ -1,20 +1,50 @@
-#In the script,  F( Fluoride) is interested ion, which can be replaced with other ions, then extract information regarding the ion, and then download the CIF files.
 import os
+import sys
 import requests
 import pandas as pd
 from Bio.PDB import MMCIFParser
+import argparse
 
-# Define constants
-ION_SYMBOL = "F"  # Ion of interest
+# -----------------------------
+# 1. Parse command-line arguments
+# -----------------------------
+parser = argparse.ArgumentParser(
+    description="Extract and analyze PDB data for a specific Hofmeister ion."
+)
+parser.add_argument(
+    "ion",
+    type=str,
+    help="Ion symbol of interest (e.g., F, Cl, Na, K, Ca2+)",
+)
+parser.add_argument(
+    "--output",
+    type=str,
+    default=None,
+    help="Optional output directory (default: Desktop/{ION_SYMBOL})",
+)
+
+args = parser.parse_args()
+ION_SYMBOL = args.ion
+
+# -----------------------------
+# 2. Define directories dynamically
+# -----------------------------
+BASE_DESKTOP = os.path.expanduser("~/Desktop")
+OUTPUT_DIRECTORY = args.output or os.path.join(BASE_DESKTOP, ION_SYMBOL)
+CIF_DIRECTORY = os.path.join(OUTPUT_DIRECTORY, "cif")
+
+os.makedirs(CIF_DIRECTORY, exist_ok=True)
+
+# -----------------------------
+# 3. Define URLs and constants
+# -----------------------------
 SEARCH_URL = "https://www.ebi.ac.uk/pdbe/search/pdb/select?"
 SUPFAM_TEMPLATE = "https://supfam.org/SUPERFAMILY/cgi-bin/gene.cgi?genome=up;seqid=%s"
 CIF_DOWNLOAD_TEMPLATE = "https://files.rcsb.org/download/{}.cif"
-CIF_DIRECTORY = f"/Users/respina/desktop/{ION_SYMBOL}/cif"
-OUTPUT_DIRECTORY = f"/Users/respina/desktop/{ION_SYMBOL}"
 
-# Ensure CIF directory exists
-os.makedirs(CIF_DIRECTORY, exist_ok=True)
-
+# -----------------------------
+# 4. Search and data collection
+# -----------------------------
 def make_request(search_params, rows=40000):
     search_params['rows'] = rows
     search_params['wt'] = 'json'
@@ -45,10 +75,11 @@ filter_fields = [
     'number_of_bound_molecules', 'molecule_type'
 ]
 
+print(f"\n🔍 Searching PDB for ion: {ION_SYMBOL} ...")
 pdb_results = make_request(format_search_query(filter_fields))
 print(f"Number of PDB entries found: {len(pdb_results)}")
-tab1_data = []
 
+tab1_data = []
 for entry in pdb_results:
     pdb_id = entry.get('pdb_id', "").upper()
     experimental_method = entry.get('experimental_method', "")
@@ -97,8 +128,8 @@ for entry in pdb_results:
 tab1_df = pd.DataFrame(tab1_data)
 
 if tab1_df.empty:
-    print("No valid PDB entries found. Exiting script.")
-    exit()
+    print("⚠️ No valid PDB entries found. Exiting script.")
+    sys.exit()
 
 tab1_df['resolution'] = pd.to_numeric(tab1_df['resolution'], errors='coerce')
 filtered_df = tab1_df.loc[tab1_df.groupby('uniprot')['resolution'].idxmin()]
@@ -124,10 +155,12 @@ def extract_numeric_assembly(value):
 
 filtered_df['assembly_type_numeric'] = filtered_df['assembly_type'].apply(extract_numeric_assembly)
 
-os.makedirs(OUTPUT_DIRECTORY, exist_ok=True)
 csv_file = os.path.join(OUTPUT_DIRECTORY, f"{ION_SYMBOL}_ion_information_filtered.csv")
 filtered_df.to_csv(csv_file, index=False)
 
+# -----------------------------
+# 5. CIF download & processing
+# -----------------------------
 def download_cif_file(pdb_id):
     cif_url = CIF_DOWNLOAD_TEMPLATE.format(pdb_id)
     cif_path = os.path.join(CIF_DIRECTORY, f"{pdb_id}.cif")
@@ -136,14 +169,14 @@ def download_cif_file(pdb_id):
         if response.status_code == 200:
             with open(cif_path, 'wb') as f:
                 f.write(response.content)
-            print(f"Downloaded: {pdb_id}.cif")
+            print(f"✅ Downloaded: {pdb_id}.cif")
         else:
-            print(f"Failed to download: {pdb_id}.cif")
+            print(f"❌ Failed to download: {pdb_id}.cif")
 
 for pdb_id in filtered_df['pdb_id']:
     download_cif_file(pdb_id)
 
-def get_F_count(cif_file_path, ion_identifier=ION_SYMBOL):
+def get_ion_count(cif_file_path, ion_identifier=ION_SYMBOL):
     try:
         parser = MMCIFParser(QUIET=True)
         structure = parser.get_structure("PDB", cif_file_path)
@@ -163,17 +196,18 @@ def process_cif_files(cif_directory):
     for cif_file in os.listdir(cif_directory):
         if cif_file.endswith(".cif"):
             cif_file_path = os.path.join(cif_directory, cif_file)
-            f_count = get_F_count(cif_file_path)
+            ion_count = get_ion_count(cif_file_path)
             results.append({
                 'PDB ID': cif_file.split('.')[0],
-                f'{ION_SYMBOL}_count': f_count
+                f'{ION_SYMBOL}_count': ion_count
             })
     return pd.DataFrame(results)
 
 cif_results_df = process_cif_files(CIF_DIRECTORY)
 merged_df = pd.merge(filtered_df, cif_results_df, left_on='pdb_id', right_on='PDB ID', how='outer')
-total_f_count = merged_df[f'{ION_SYMBOL}_count'].sum()
-total_row = pd.DataFrame([{'PDB ID': 'Total', f'{ION_SYMBOL}_count': total_f_count}])
+
+total_ion_count = merged_df[f'{ION_SYMBOL}_count'].sum()
+total_row = pd.DataFrame([{'PDB ID': 'Total', f'{ION_SYMBOL}_count': total_ion_count}])
 merged_df = pd.concat([merged_df, total_row], ignore_index=True)
 
 matched_df = merged_df[
@@ -185,11 +219,12 @@ match_count = matched_df[matched_df['PDB ID'] != 'Total'].shape[0]
 total_entries = merged_df[merged_df['PDB ID'] != 'Total'].shape[0]
 percentage_match = (match_count / total_entries) * 100 if total_entries > 0 else 0
 
-print(f"\nNumber of PDB entries where 'assembly_type_numeric' equals 'number_of_protein_chains': {match_count}")
-print(f"Percentage: {percentage_match:.2f}%\n")
+print(f"\n🔬 Matches found where 'assembly_type_numeric' = 'number_of_protein_chains': {match_count}")
+print(f"📊 Percentage: {percentage_match:.2f}%")
+print(f"🧮 Total {ION_SYMBOL} ion count: {total_ion_count}")
 
 merged_df.to_csv(csv_file, index=False)
-print(f"Final results with {ION_SYMBOL} count saved to {csv_file}")
-print(f"Total {ION_SYMBOL} ion count: {total_f_count}")
+print(f"\n✅ Final results saved to: {csv_file}")
+
 
 
