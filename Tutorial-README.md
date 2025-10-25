@@ -6,18 +6,27 @@ The Hofmeister series refers to a classification of ions that influence the stab
 <img width="738" height="303" alt="image" src="https://github.com/user-attachments/assets/a7d08e81-66d9-497d-b1f4-57e0a6146b69" />
 
 Workflow for Metadata Extraction and Structural Analysis
-To systematically analyze protein-ion interactions involving Hofmeister series ions, we developed and executed an automated workflow within a High-Performance Computing (HPC) environment, using Bash scripting as well as Python programming.
+To systematically analyze protein-ion interactions involving Hofmeister series ions, I developed and executed an automated workflow within a High-Performance Computing (HPC) environment, using Bash scripting as well as Python programming.
 
 
-This pipeline helps you study how ions (default: F) interact with proteins using PDB CIF files. You can
-replace F with other ions (Cl, Br, I, etc.) easily.
+This pipeline helps you study how ions interact with proteins using PDB CIF files. 
 
 ■ Requirements
 Before starting, make sure you have installed: - Python 3.8+ - Packages: pip install biopython pandas
-matplotlib requests numpy - External tools: mkdssp (for secondary structure analysis)
+matplotlib requests numpy - External tools: mkdssp (for secondary structure analysis) and ProPka tool.
+
+■To run the pipeline for any ion, simply open your terminal (Bash/Linux) and provide the ion symbol as an argument.
+No need to edit the Python file — just change the ion symbol in the command.
+
+like: 
+python3 1.metadata-Hofmeister-ions-series.py F
+
+Optionally, you can also add a custom output folder:
+python3 1.metadata-Hofmeister-ions-series.py F --output /path/to/output
 
 1. Extract Metadata & Download CIF Files
-Run: python metadata-Hofmeister-ions-series.py
+Run: python metadata-Hofmeister-ions-series.py ion symbol
+
 - Searches PDB for entries with your ion of interest (ION_SYMBOL in script). - Filters for high-resolution protein X-ray structures (≤2.0 Å).
 - Downloads CIF files into /ION/cif.
 - Creates ION_ion_information_filtered.csv with metadata + ion counts.
@@ -28,21 +37,25 @@ pdb_id , experimental_method , UniProt , title , Resolution , organism_scientifi
 
   
 2. Analyze Ion Interactions
-Run: python result.py
+Run: python result.py ion symbol
+
 - Reads CIFs, finds all ion–atom interactions (distance, angle).
 - Classifies interactions: Ion–Ion, Salt Bridge, Metal, H-bond, Aliphatic, Aromatic, Cofactor/Ligand, Water.
 - Saves detailed results into result.csv.
   
 3. Convert CIF → DSSP (Secondary Structure)
-Run: python cif2dssp.py
+Run: python cif2dssp.py ion symbol
+
 - Uses mkdssp to convert CIF → DSSP. - Stores .dssp files in /dssp_results.
   
 4. Add Secondary Structure Info
-Run: python DSSP.column.py
+Run: python DSSP.column.py ion symbol
+
 - Merges DSSP secondary structure info with interaction data in result.csv. - Assigns each residue to: α-helix, β-strand, turn, coil, etc.
   
 5. Generate Interaction Tables
-Run: python table.py
+Run: python table.py ion symbol
+
 - Processes result.csv.
 - Summarizes residue types, interaction counts within interested shell, unique residue counts. - Output: interaction_statistics_with_residue_counts.csv.
 
@@ -59,31 +72,37 @@ Unique Residues in Shell – Number of unique residue instances of this type in 
   ![WhatsApp Image 2024-11-04 at 16 29 35](https://github.com/user-attachments/assets/b13d407e-f580-4f84-ab1e-29f31cd82bab)
 
 6. Plot Interaction Type Distribution (Pie Chart)
-Run: python pichart-interaction-type.py
+Run: python pichart-interaction-type.py ion symbol
+
 - Creates pie chart of interaction types.
 - Saves as interaction_type_distribution.png.
 
 - <img width="328" height="265" alt="image" src="https://github.com/user-attachments/assets/637805b7-8760-4462-adcc-ae47d668dcc5" />
 
 7. Plot Secondary Structure Distribution (Pie Chart)
-Run: python pichart-dssp.py
+Run: python pichart-dssp.py ion symbol
+
 - Visualizes secondary structure preference of ion interactions. - Saves as secondary_structure_distribution.png.
 - <img width="327" height="263" alt="image" src="https://github.com/user-attachments/assets/bdfabb81-5a05-426a-8bde-0e6581c7eb02" />
 
 8. Analyze Hydration Shell
-Run: python water.py
+Run: python water.py ion symbol
+
 - Counts nearby water molecules (≤4 or 5 Å) around each ion. - Produces histogram of hydration shell sizes.
 
 - <img width="490" height="294" alt="image" src="https://github.com/user-attachments/assets/47fbf0f9-6157-4ddc-bbcc-c8d752cb0ae6" />
 
 
-9. Can also in detail look at the frequency of the each residues in the entries that contain the ion. For this aim run 9.residues.py
+9. Can also in detail look at the frequency of the each residues in the entries that contain the ion.
+10. For this aim run 9.residues.py ion symbol
 
 <img width="558" height="295" alt="image" src="https://github.com/user-attachments/assets/ff5db81f-b1ac-4e68-93d6-af7fe84dca64" />
 
 
 10. PROPKA Calculation of pKa Values
-Addionally, after ion replacement, the script runs PROPKA to predict pKa values of ionizable residues in the modified protein structures.This provides insight into how different ions affect local protein charge and stability, a key factor in Hofmeister effects.Results are stored in a folder automatically named after the ion_symbol (propka-GAI), keeping outputs organized for multiple ions.
+11. run propka.py ion symbol
+12. 
+the script runs PROPKA to predict pKa values of ionizable residues in the modified protein structures.This provides insight into how different ions affect local protein charge and stability, a key factor in Hofmeister effects.Results are stored in a folder automatically named after the ion_symbol (propka-GAI), keeping outputs organized for multiple ions.
 
 
 
