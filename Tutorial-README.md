@@ -77,7 +77,7 @@ Run: python water.py
 - <img width="490" height="294" alt="image" src="https://github.com/user-attachments/assets/47fbf0f9-6157-4ddc-bbcc-c8d752cb0ae6" />
 
 
-9. Can also in detail look at the frequency of the each residues in the entries that contain the ion 
+9. Can also in detail look at the frequency of the each residues in the entries that contain the ion. For this aim run 9.residues.py
 
 <img width="558" height="295" alt="image" src="https://github.com/user-attachments/assets/ff5db81f-b1ac-4e68-93d6-af7fe84dca64" />
 
