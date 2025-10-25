@@ -1,85 +1,95 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
+import argparse
 
-# Define the path to the directory and the file name
-directory = "/Users/respina/desktop/GAI"
-file_name = "interaction_statistics_with_residue_counts.csv"
-file_path = os.path.join(directory, file_name)
+# -----------------------------
+# 1. Command-line arguments
+# -----------------------------
+parser = argparse.ArgumentParser(
+    description="Generate pie chart of interaction types around a given ion."
+)
+parser.add_argument(
+    "ion",
+    type=str,
+    help="Ion symbol (e.g., F, CL, SCN, SO4, etc.)"
+)
+parser.add_argument(
+    "--output",
+    type=str,
+    default=None,
+    help="Optional output directory (default: ~/Desktop/{ION}/)"
+)
+args = parser.parse_args()
+ION_SYMBOL = args.ion.upper()
 
-# Define a lighter color mapping for interaction types
+# -----------------------------
+# 2. Define directories
+# -----------------------------
+BASE_DESKTOP = os.path.expanduser("~/Desktop")
+BASE_DIR = args.output or os.path.join(BASE_DESKTOP, ION_SYMBOL)
+
+input_file = os.path.join(BASE_DIR, "interaction_statistics_with_residue_counts.csv")
+output_file = os.path.join(BASE_DIR, f"{ION_SYMBOL}_interaction_type_distribution.png")
+
+# -----------------------------
+# 3. Interaction color mapping
+# -----------------------------
 interaction_colors = {
     'H-bond with Main Chain': '#90EE90',  # Light Green
     'H-bond with Side Chain': '#87CEFA',  # Light Blue
-    'Aliphatic': '#FFD700',  # Light Orange/Gold
-    'Aromatic': '#FFFFE0',  # Light Yellow
-    'Metal': '#FFA500',     # Orange
-    'Salt Bridge': '#D2B48C',  # Tan
-    'Cofactor/Ligand': '#FFB6B9',  # Soft Pink
-    'H-bond with Water': '#D8BFD8',  # Thistle (Light Purple)
-    'Ion': '#B0E0E6'  # Powder Blue
+    'Aliphatic': '#FFD700',               # Light Orange/Gold
+    'Aromatic': '#FFFFE0',                # Light Yellow
+    'Metal': '#FFA500',                    # Orange
+    'Salt Bridge': '#D2B48C',             # Tan
+    'Cofactor/Ligand': '#FFB6B9',         # Soft Pink
+    'H-bond with Water': '#D8BFD8',       # Thistle (Light Purple)
+    'Ion': '#B0E0E6'                       # Powder Blue
 }
 
-# Desired order of interactions
 desired_order = [
     'Aromatic', 'Aliphatic', 'Metal', 'H-bond with Main Chain', 
     'H-bond with Side Chain', 'Cofactor/Ligand', 'H-bond with Water', 
     'Ion', 'Salt Bridge'
 ]
 
-# Check if the file exists
-if not os.path.exists(file_path):
-    print(f"Error: The file '{file_name}' was not found in the directory '{directory}'.")
+# -----------------------------
+# 4. Main processing
+# -----------------------------
+if not os.path.exists(input_file):
+    print(f"Error: Input file not found: {input_file}")
 else:
     try:
-        # Read the CSV file into a DataFrame
-        data = pd.read_csv(file_path)
+        data = pd.read_csv(input_file)
 
-        # Check if required columns are present
-        if 'Interaction Type' in data.columns and 'Approx. Percentage in Shell' in data.columns:
+        if 'Interaction Type' not in data.columns or 'Approx. Percentage in Shell' not in data.columns:
+            raise KeyError("'Interaction Type' or 'Approx. Percentage in Shell' column missing.")
 
-            # Remove any whitespace or unexpected characters in column values
-            data['Interaction Type'] = data['Interaction Type'].str.strip()
+        data['Interaction Type'] = data['Interaction Type'].str.strip()
 
-            # Group by 'Interaction Type' and sum the percentages for each type
-            interaction_percentage = data.groupby('Interaction Type')['Approx. Percentage in Shell'].sum()
+        interaction_percentage = data.groupby('Interaction Type')['Approx. Percentage in Shell'].sum()
+        interaction_percentage = interaction_percentage[interaction_percentage > 0]
 
-            # Filter out interaction types with 0% to avoid showing them on the chart
-            interaction_percentage = interaction_percentage[interaction_percentage > 0]
+        interaction_percentage = interaction_percentage.reindex(
+            [interaction for interaction in desired_order if interaction in interaction_percentage.index]
+        )
 
-            # Ensure that the remaining interaction types appear in the desired order
-            interaction_percentage = interaction_percentage.reindex(
-                [interaction for interaction in desired_order if interaction in interaction_percentage.index]
-            )
+        colors = [interaction_colors.get(interaction, '#808080') for interaction in interaction_percentage.index]
 
-            # Ensure that no interaction type is missing from the color mapping
-            colors = [
-                interaction_colors.get(interaction, '#808080')  # Default: Gray
-                for interaction in interaction_percentage.index
-            ]
+        plt.figure(figsize=(10, 10))
+        plt.pie(
+            interaction_percentage,
+            labels=interaction_percentage.index,
+            autopct=lambda p: f'{p:.2f}%' if p > 0 else '',
+            startangle=140,
+            colors=colors
+        )
+        plt.title(f"Distribution of Interaction Types around {ION_SYMBOL}", fontsize=16)
+        plt.savefig(output_file, dpi=300, bbox_inches='tight')
+        plt.show()
 
-            # Plot the pie chart with more precise percentages
-            plt.figure(figsize=(10, 10))
-            plt.pie(
-                interaction_percentage,
-                labels=interaction_percentage.index,
-                autopct=lambda p: f'{p:.2f}%' if p > 0 else '',
-                startangle=140,
-                colors=colors
-            )
-
-            # Add a title to the chart
-            plt.title("Distribution of Interaction Types around ION", fontsize=16)
-
-            # Save the figure to the same directory
-            output_path = os.path.join(directory, "interaction_type_distribution.png")
-            plt.savefig(output_path, dpi=300, bbox_inches='tight')
-
-            # Display the plot
-            plt.show()
-
-        else:
-            print("Error: 'Interaction Type' or 'Approx. Percentage in Shell' column not found in the file.")
+        print(f"✅ Pie chart saved to: {output_file}")
 
     except Exception as e:
         print(f"An error occurred: {e}")
+
