@@ -94,7 +94,7 @@ Run: python water.py ion symbol
 
 
 9. Can also in detail look at the frequency of the each residues in the entries that contain the ion.
-10. For this aim run 9.residues.py ion symbol
+For this aim run 9.residues.py ion symbol
 
 <img width="558" height="295" alt="image" src="https://github.com/user-attachments/assets/ff5db81f-b1ac-4e68-93d6-af7fe84dca64" />
 
