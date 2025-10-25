@@ -100,9 +100,10 @@ For this aim run 9.residues.py ion symbol
 
 
 10. PROPKA Calculation of pKa Values
+
 run propka.py ion symbol
 
-the script runs PROPKA to predict pKa values of ionizable residues in the modified protein structures.This provides insight into how different ions affect local protein charge and stability, a key factor in Hofmeister effects.Results are stored in a folder automatically named after the ion_symbol (propka-GAI), keeping outputs organized for multiple ions.
+the script runs PROPKA to predict pKa values of ionizable residues in the modified protein structures.This provides insight into how different ions affect local protein charge and stability, a key factor in Hofmeister effects. At the end will have one propka_summary.csv, as well as orginal propka files for each entery. 
 
 
 
